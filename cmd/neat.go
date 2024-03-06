@@ -52,11 +52,6 @@ func Neat(in string) (string, error) {
 				continue
 			}
 		}
-		// general neating
-		draft, err = neatMetadata(draft)
-		if err != nil {
-			return draft, fmt.Errorf("error in neatMetadata : %v", err)
-		}
 		return draft, nil
 	}
 
@@ -87,6 +82,10 @@ func Neat(in string) (string, error) {
 	if err != nil {
 		return draft, fmt.Errorf("error in neatStatus : %v", err)
 	}
+	draft, err = neatClusterIP(draft)
+	if err != nil {
+		return draft, fmt.Errorf("error in neatClusterIP : %v", err)
+	}
 	draft, err = neatEmpty(draft)
 	if err != nil {
 		return draft, fmt.Errorf("error in neatEmpty : %v", err)
@@ -112,6 +111,10 @@ func neatMetadata(in string) (string, error) {
 
 func neatStatus(in string) (string, error) {
 	return sjson.Delete(in, "status")
+}
+
+func neatClusterIP(in string) (string, error) {
+	return sjson.Delete(in, "spec.clusterIP")
 }
 
 func neatScheduler(in string) (string, error) {
@@ -204,9 +207,8 @@ func findEmptyPathsRecursive(cur gjson.Result, path string, res *[]string) {
 func isResultEmpty(j gjson.Result) bool {
 	v := j.Value()
 	switch vt := v.(type) {
-	// empty string != lack of string. keep empty strings as it's meaningful data
-	// case string:
-	// 	return vt == ""
+	case string:
+		return vt == ""
 	case []interface{}:
 		return len(vt) == 0
 	case map[string]interface{}:
